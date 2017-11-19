@@ -910,13 +910,15 @@ void OctomapWorld::infeasiblePointsInBox(
   // }
   // In case the whole box can't be feasible (bounding box of robot_size_ around
   // a point on one bound of the box hits obstacle on the other side)
-  if (getCellStatusBoundingBox(box.first,
-    Eigen::Vector3d::Constant(resolution-epsilon).cwiseMax((
-                         robot_size_ -
-                         Eigen::Vector3d::Constant(box.second)) / 2)) == kOccupied) {
+  if (getCellStatusBoundingBox(
+          box.first,
+          Eigen::Vector3d::Constant(resolution - epsilon).cwiseMax(
+              robot_size_ - Eigen::Vector3d::Constant(box.second))) != kFree) {
 
-    Eigen::Vector3d bbx_min = box.first - Eigen::Vector3d::Constant(box.second - resolution) / 2;
-    Eigen::Vector3d bbx_max = box.first + Eigen::Vector3d::Constant(box.second - resolution) / 2;
+    Eigen::Vector3d bbx_min =
+        box.first - Eigen::Vector3d::Constant(box.second - resolution) / 2;
+    Eigen::Vector3d bbx_max =
+        box.first + Eigen::Vector3d::Constant(box.second - resolution) / 2;
     for (double x_position = bbx_min.x(); x_position <= bbx_max.x() + epsilon;
          x_position += resolution) {
       for (double y_position = bbx_min.y(); y_position <= bbx_max.y() + epsilon;
