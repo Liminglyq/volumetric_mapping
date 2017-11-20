@@ -279,6 +279,7 @@ class OctomapWorld : public WorldBase {
   int case1;
   int case2;
   int case3;
+  int getCellStatusBoundingBox_counter;
 };
 
 }  // namespace volumetric_mapping

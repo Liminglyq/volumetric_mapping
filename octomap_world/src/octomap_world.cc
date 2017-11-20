@@ -827,6 +827,7 @@ void OctomapWorld::inflateOccupied() {
   const double log_odds_value = octree_->getClampingThresMaxLog();
   std::vector<std::pair<Eigen::Vector3d, double>> box_vector;
   getAllFreeBoxes(&box_vector);
+  std::cout << "There are " << box_vector.size() << " free boxes\n";
   std::queue<octomap::point3d> occupied_points;
 
   time_case1pos = 0;
@@ -838,6 +839,7 @@ void OctomapWorld::inflateOccupied() {
   case1 = 0;
   case2 = 0;
   case3 = 0;
+  getCellStatusBoundingBox_counter = 0;
 
   // Get all free but infeasible points
   for (const std::pair<Eigen::Vector3d, double>& box : box_vector) {
@@ -848,7 +850,7 @@ void OctomapWorld::inflateOccupied() {
   std::cout << "Negative cases: time_case1: " << time_case1neg << ", time_case2: " << time_case2neg << ", time_case3: " << time_case3neg << "\n";
   double total_cases = (double)(case1 + case2 + case3)/100.0;
   std::cout << "case1: " << case1/total_cases << "%, case2: " << case2/total_cases << "%, case3: " << case3/total_cases << "%\n";
-
+  std::cout << "Called " <<   getCellStatusBoundingBox_counter << " times getCellStatusBoundingBox\n";
   // Set all infeasible points occupied
   while (!occupied_points.empty()) {
     octree_->setNodeValue(occupied_points.front(), log_odds_value, lazy_eval);
@@ -910,6 +912,7 @@ void OctomapWorld::infeasiblePointsInBox(
   // }
   // In case the whole box can't be feasible (bounding box of robot_size_ around
   // a point on one bound of the box hits obstacle on the other side)
+  getCellStatusBoundingBox_counter++;
   if (getCellStatusBoundingBox(
           box.first,
           Eigen::Vector3d::Constant(resolution - epsilon).cwiseMax(
