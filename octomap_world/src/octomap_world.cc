@@ -822,7 +822,7 @@ void OctomapWorld::generateMarkerArray(
   }
 }
 
-void OctomapWorld::inflateOccupied(const Eigen::Vector3d& inflate_size) {
+void OctomapWorld::inflateOccupied() {
   const bool lazy_eval = true;
   const double log_odds_value = octree_->getClampingThresMaxLog();
   const double resolution = octree_->getResolution();
@@ -839,20 +839,38 @@ void OctomapWorld::inflateOccupied(const Eigen::Vector3d& inflate_size) {
   Eigen::Vector3d actual_position;
 
   for (const std::pair<Eigen::Vector3d, double>& box : box_vector) {
-    Eigen::Vector3d bbx_min =
-        box.first - Eigen::Vector3d::Constant((box.second - resolution) / 2);
-    Eigen::Vector3d bbx_max =
-        box.first + Eigen::Vector3d::Constant(box.second / 2 - epsilon);
-    for (double x_position = bbx_min.x(); x_position <= bbx_max.x();
-         x_position += resolution) {
-      for (double y_position = bbx_min.y(); y_position <= bbx_max.y();
-           y_position += resolution) {
-        for (double z_position = bbx_min.z(); z_position <= bbx_max.z();
-             z_position += resolution) {
-          actual_position << x_position, y_position, z_position;
-          if (getCellStatusBoundingBox(
-                  actual_position, inflate_size + Eigen::Vector3d::Constant(
-                                                      resolution)) != kFree) {
+    if (box.second > robot_size_.minCoeff() / 2 - epsilon) {
+      Eigen::Vector3d bbx_min =
+          box.first - Eigen::Vector3d::Constant((box.second - resolution) / 2);
+      Eigen::Vector3d bbx_max =
+          box.first + Eigen::Vector3d::Constant(box.second / 2 - epsilon);
+      for (double x_position = bbx_min.x(); x_position <= bbx_max.x();
+           x_position += resolution) {
+        for (double y_position = bbx_min.y(); y_position <= bbx_max.y();
+             y_position += resolution) {
+          for (double z_position = bbx_min.z(); z_position <= bbx_max.z();
+               z_position += resolution) {
+            actual_position << x_position, y_position, z_position;
+            if (getCellStatusBoundingBox(
+                    actual_position, robot_size_ + Eigen::Vector3d::Constant(
+                                                        resolution)) != kFree) {
+              occupied_points.push(
+                  octomap::point3d(x_position, y_position, z_position));
+            }
+          }
+        }
+      }
+    } else {
+      Eigen::Vector3d bbx_min =
+          box.first - Eigen::Vector3d::Constant(box.second - resolution) / 2;
+      Eigen::Vector3d bbx_max =
+          box.first + Eigen::Vector3d::Constant(box.second - resolution) / 2;
+      for (double x_position = bbx_min.x(); x_position <= bbx_max.x() + epsilon;
+           x_position += resolution) {
+        for (double y_position = bbx_min.y();
+             y_position <= bbx_max.y() + epsilon; y_position += resolution) {
+          for (double z_position = bbx_min.z();
+               z_position <= bbx_max.z() + epsilon; z_position += resolution) {
             occupied_points.push(
                 octomap::point3d(x_position, y_position, z_position));
           }
