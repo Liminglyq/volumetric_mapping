@@ -825,6 +825,8 @@ void OctomapWorld::generateMarkerArray(
 void OctomapWorld::inflateOccupied() {
   const bool lazy_eval = true;
   const double log_odds_value = octree_->getClampingThresMaxLog();
+  const double resolution = octree_->getResolution();
+  const double epsilon = 1e-6;  // Small offset to not hit boundary of nodes
   std::vector<std::pair<Eigen::Vector3d, double>> box_vector;
   getAllFreeBoxes(&box_vector);
   std::cout << "There are " << box_vector.size() << " free boxes\n";
@@ -843,7 +845,24 @@ void OctomapWorld::inflateOccupied() {
 
   // Get all free but infeasible points
   for (const std::pair<Eigen::Vector3d, double>& box : box_vector) {
-    infeasiblePointsInBox(box, &occupied_points);
+    if (box.second > robot_size_.minCoeff()/2 - epsilon) {
+      infeasiblePointsInBox(box, &occupied_points);
+    } else {
+      Eigen::Vector3d bbx_min =
+          box.first - Eigen::Vector3d::Constant(box.second - resolution) / 2;
+      Eigen::Vector3d bbx_max =
+          box.first + Eigen::Vector3d::Constant(box.second - resolution) / 2;
+      for (double x_position = bbx_min.x(); x_position <= bbx_max.x() + epsilon;
+           x_position += resolution) {
+        for (double y_position = bbx_min.y(); y_position <= bbx_max.y() + epsilon;
+             y_position += resolution) {
+          for (double z_position = bbx_min.z(); z_position <= bbx_max.z() + epsilon;
+               z_position += resolution) {
+            occupied_points.push(octomap::point3d(x_position, y_position, z_position));
+          }
+        }
+      }
+    }
   }
 
   std::cout << "Positive cases: time_case1: " << time_case1pos << ", time_case2: " << time_case2pos << ", time_case3: " << time_case3pos << "\n";
